@@ -141,12 +141,11 @@ def set_item_content_endpoint(
 def set_item_meta_endpoint(
     item_id: str, 
     meta: dict, 
-    product_name: str = PRODUCT, 
     user = Depends(require_auth)):
     """
     Endpoint to set the meta of an item for a user.
     """
-    set_item_meta(user.user.id, product_name, item_id, meta)
+    set_item_meta(user.user.id, item_id, meta)
     return {"status": "ok"}
 
 @app.delete("/items/{item_id}")

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import Editor from "@/components/editor";
-import { getItems, getItem, createItem } from "@/lib/api";
+import { getItems, getItem, createItem, setItemMeta, setItemContent } from "@/lib/api";
 import toast from "react-hot-toast";
 
 export default function Home() {
@@ -79,6 +79,18 @@ export default function Home() {
     }
   }  
 
+  const onTitleChange = async (newTitle) => {
+    setActiveTitle(newTitle);
+    try{
+      await setItemMeta(activeDocId, { title: newTitle }, session.access_token, router);
+      toast.success('Document title updated successfully');
+      fetchDocs(); // Refresh the list of documents to reflect the new title
+    } catch (err) {
+      toast.error('Failed to update document title');
+      console.error('Failed to update title:', err);
+    }
+  }
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -151,6 +163,7 @@ export default function Home() {
               key={activeDocId}
               initialTitle={activeTitle}
               initialValue={content}
+              onTitleChange={onTitleChange}
             />
           ) : (
             <div className="text-center text-gray-500 mt-24">
