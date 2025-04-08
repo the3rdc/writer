@@ -251,7 +251,7 @@ def get_item(user_id: str, item_id: str, include_meta: bool = True, include_cont
     """
     Get a specific item for a user.
     """
-    query = supabase.table("user_items").select("*").eq("user_id", user_id).eq("item_id", item_id)
+    query = supabase.table("user_items")
     
     if not include_meta and not include_content:
         query = query.select("item_id, item_type, updated_at")
@@ -264,6 +264,8 @@ def get_item(user_id: str, item_id: str, include_meta: bool = True, include_cont
     
     else:
         query = query.select("*")
+
+    query = query.eq("user_id", user_id).eq("item_id", item_id)
     
     item = query.single().execute()
     

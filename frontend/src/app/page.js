@@ -16,6 +16,7 @@ export default function Home() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [content, setContent] = useState("Start writing...")
+  const [activeTitle , setActiveTitle] = useState("")
   const [isOpen, setIsOpen] = useState(true)
 
   const [docs, setDocs] = useState([]);
@@ -53,6 +54,17 @@ export default function Home() {
     }
   }
 
+  const openDoc = async (docId) => {
+    try {
+      const doc = await getItem(docId, session.access_token, router, true, true);
+      setContent(doc.item_content);
+      setActiveTitle(doc.item_meta.title);
+    } catch (err) {
+      toast.error('Failed to open document');
+      console.error('Failed to open doc:', err);
+    }
+  }
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -81,7 +93,7 @@ export default function Home() {
                 <a
                   className="p-2 my-3 mx-4 text-gray-700 dark:text-gray-200 cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800"
                   onClick={() => {
-                    setContent(doc.content);
+                    openDoc(doc.item_id);
                   }}
                 >
                   {doc.item_meta.title}
@@ -117,6 +129,7 @@ export default function Home() {
 
         <main className="flex-1 overflow-auto p-4">
           <Editor
+            title={activeTitle}
             initialValue={content}
             onChange={(val) => console.log('Changed:', val)}
           />

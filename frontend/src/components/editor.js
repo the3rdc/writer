@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 
-export default function Editor({ initialValue = '', onChange }) {
+export default function Editor({ initialValue = '', onChange, title }) {
   const divRef = useRef(null)
 
   useEffect(() => {
@@ -12,6 +12,7 @@ export default function Editor({ initialValue = '', onChange }) {
   return (
     <div className="flex justify-center">
       <div className="font-[family-name:var(--font-geist-mono)] antialiased prose w-full max-w-prose">
+        <h1 className="text-2xl font-bold mb-4" contentEditable suppressContentEditableWarning>{title}</h1>
         <div
           ref={divRef}
           contentEditable
