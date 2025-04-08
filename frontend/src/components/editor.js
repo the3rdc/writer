@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react';
 
-export default function Editor({ initialValue = '', onContentChange, onTitleChange, initialTitle = '' }) {
+export default function Editor({ initialValue = '', initialTitle = '',
+   onContentChange, onTitleChange, suggestion, setSuggestion
+}) {
   const divRef = useRef(null);
   const titleRef = useRef(null);
   const debounceTimerRef = useRef(null);
@@ -34,6 +36,39 @@ export default function Editor({ initialValue = '', onContentChange, onTitleChan
     onTitleChange?.(newTitle);
   };
 
+  const getTrimmedSuggestion = (full) => {
+    if (!full) return '';
+    const match = full.match(/.*?[.?!,:;…]/);
+    return match ? match[0] : full;
+  };  
+
+  useEffect(() => {
+    const editable = divRef.current;
+    if (!editable) return;
+  
+    const handleKeyDown = (event) => {
+      if (event.key === "Tab" && suggestion !== "") {
+        event.preventDefault();
+        const trimmed = getTrimmedSuggestion(suggestion);
+  
+        // Insert the suggestion at the caret position
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+  
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(trimmed));
+        range.collapse(false);
+  
+        setSuggestion((prev) => prev.replace(trimmed, ""));
+      }
+    };
+  
+    editable.addEventListener("keydown", handleKeyDown);
+  
+    return () => editable.removeEventListener("keydown", handleKeyDown);
+  }, [suggestion]);
+  
   return (
     <div className="flex justify-center">
       <div className="font-[family-name:var(--font-geist-mono)] antialiased prose w-full max-w-prose">
@@ -44,13 +79,25 @@ export default function Editor({ initialValue = '', onContentChange, onTitleChan
           suppressContentEditableWarning
           onBlur={handleTitleBlur}
         />
-        <div
-          ref={divRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={handleContentChange}
-          className="min-h-[200px] outline-none whitespace-pre-wrap break-words"
-        />
+        <div>
+          <span
+            ref={divRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={handleContentChange}
+            className="min-h-[200px] outline-none whitespace-pre-wrap break-words"
+          />
+          {
+            suggestion != "" && (
+              <span className="text-stone-600 dark:text-stone-400">
+                {getTrimmedSuggestion(suggestion)}
+                <span className="ml-2 text-xs text-stone-400 dark:text-stone-500">
+                &rsaquo; Tab to accept
+                </span>
+              </span>            
+            )
+          }
+        </div>
       </div>
     </div>
   );

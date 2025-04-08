@@ -18,6 +18,8 @@ from omni.helpers import (
     set_item_content, set_item_meta
 )
 
+from .suggest import get_suggestions
+
 app = FastAPI()
 
 origins = [
@@ -160,3 +162,29 @@ def delete_item_endpoint(
     """
     delete_item(user.user.id, product_name, item_id)
     return {"status": "ok"}
+
+
+class SuggestRequest(BaseModel):
+    content: str
+    save_content: Optional[bool] = False
+
+@app.post("/items/{item_id}/suggest")
+def get_suggestion(
+    item_id: str, 
+    body: SuggestRequest, 
+    user = Depends(require_auth)):
+    """
+    Endpoint to get suggestions for a user.
+    """
+    item = get_item(user.user.id, item_id, include_meta=True)
+    if not item:
+        return {"status": "error", "message": "Item not found"}
+    
+    # Get the suggestions from the model
+    suggestion = get_suggestions(body.content)
+    
+    # Save the suggestions to the item if requested
+    if body.save_content:
+        set_item_content(user.user.id, item_id, body.content)
+    
+    return suggestion

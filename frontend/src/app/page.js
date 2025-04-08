@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import Editor from "@/components/editor";
-import { getItems, getItem, createItem, setItemMeta, setItemContent } from "@/lib/api";
+import { getItems, getItem, createItem, setItemMeta, setItemContent, getSuggestions } from "@/lib/api";
 import toast from "react-hot-toast";
 
 export default function Home() {
@@ -27,6 +27,8 @@ export default function Home() {
 
   const [loadingEditor, setLoadingEditor] = useState(false);
   const [workingStatus, setWorkingStatus] = useState('idle');
+
+  const [suggestion, setSuggestion] = useState("")
   
   const fetchDocs = async () => {
     try {
@@ -103,7 +105,8 @@ export default function Home() {
   const onContentChange = async (newContent) => {
     try{
       setWorkingStatus("saving");
-      await setItemContent(activeDocId, newContent, session.access_token, router)
+      const response = await getSuggestions(activeDocId, newContent, session.access_token, router, true)
+      setSuggestion(response.prediction)
       setWorkingStatus("success");
     } catch (err) {
       toast.error('Failed to update document content');
@@ -190,6 +193,8 @@ export default function Home() {
               initialValue={content}
               onTitleChange={onTitleChange}
               onContentChange={onContentChange}
+              suggestion={suggestion}
+              setSuggestion={setSuggestion}
             />
           ) : (
             <div className="text-center text-gray-500 mt-24">

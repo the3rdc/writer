@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 from openai import AzureOpenAI
+import json
 
 client = AzureOpenAI(
     api_key=os.getenv("AZURE_OPENAI_KEY"),  
@@ -59,6 +60,6 @@ def get_suggestions(prompt: str, max_tokens: int = 100) -> dict:
         temperature=0.7,
         response_format=response_format
     )
-    return completion.choices[0].message
+    return json.loads(completion.choices[0].message.content)
 
 print(get_suggestions("It was a dark and"))
