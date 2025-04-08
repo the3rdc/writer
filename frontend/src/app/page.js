@@ -16,7 +16,7 @@ export default function Home() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
 
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
 
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -26,7 +26,7 @@ export default function Home() {
   const [content, setContent] = useState("");
 
   const [loadingEditor, setLoadingEditor] = useState(false);
-
+  const [workingStatus, setWorkingStatus] = useState('idle');
   
   const fetchDocs = async () => {
     try {
@@ -59,6 +59,7 @@ export default function Home() {
   
   const createDoc = async () => {
     try {
+      setWorkingStatus("saving");
       setLoadingEditor(true);
       const newDoc = {
         title: "Blank Page",
@@ -72,28 +73,43 @@ export default function Home() {
       console.log('Created document:', createdDocs);
       await fetchDocs();
       await openDoc(createdDocs[0].item_id); // open it after creating
+      setWorkingStatus("success");
     } catch (err) {
       toast.error('Failed to create document');
       console.error('Failed to create doc:', err);
       setLoadingEditor(false); // in case openDoc never gets called
+      setWorkingStatus("error");
     }
   }  
 
   const onTitleChange = async (newTitle) => {
-    setActiveTitle(newTitle);
     try{
+      setWorkingStatus("saving");
       await setItemMeta(activeDocId, { title: newTitle }, session.access_token, router);
-      toast.success('Document title updated successfully');
-      fetchDocs(); // Refresh the list of documents to reflect the new title
+      setDocs(prev => prev.map(doc =>
+        doc.item_id === activeDocId
+          ? { ...doc, item_meta: { ...doc.item_meta, title: newTitle } }
+          : doc
+      ));
+      toast.success('Title updated');
+      setWorkingStatus("success");
     } catch (err) {
       toast.error('Failed to update document title');
       console.error('Failed to update title:', err);
+      setWorkingStatus("error");
     }
   }
 
   const onContentChange = async (newContent) => {
-    console.log('Content changed:', newContent)
-    setItemContent(activeDocId, newContent, session.access_token, router)
+    try{
+      setWorkingStatus("saving");
+      await setItemContent(activeDocId, newContent, session.access_token, router)
+      setWorkingStatus("success");
+    } catch (err) {
+      toast.error('Failed to update document content');
+      console.error('Failed to update content:', err);
+      setWorkingStatus("error");
+    }
   }
 
   useEffect(() => {
@@ -122,7 +138,11 @@ export default function Home() {
             !loadingDocs && docs.map((doc) => (
               <li key={doc.item_id}>
                 <a
-                  className="p-2 my-3 mx-4 text-gray-700 dark:text-gray-200 cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+                  className={`p-2 my-3 mx-4 cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800 ${
+                    doc.item_id === activeDocId
+                      ? 'text-black dark:text-white font-semibold'
+                      : 'text-gray-500 dark:text-gray-400'
+                  }`}
                   onClick={() => {
                     openDoc(doc.item_id);
                   }}
@@ -179,6 +199,16 @@ export default function Home() {
         </main>
 
       </div>
+      <div className="fixed bottom-4 right-4 z-50">
+      <div className="w-4 h-4 rounded-full transition-all duration-300 text-gray-500">
+        {
+          workingStatus === 'saving' ? <span>&#9862;</span> :
+          workingStatus === 'success' ? <span>&#10003;</span> :
+          workingStatus === 'error' ? <span>&#9888;</span> :
+          ''
+        }
+      </div>
+    </div>
     </div>
   )
 }
