@@ -224,11 +224,8 @@ def get_items(user_id: str, product_name: str, item_type: str = None, include_me
     """
     Get all items for a user and product.
     """
-    query = supabase.table("user_items").select("*").eq("user_id", user_id).eq("product_name", product_name)
-    
-    if item_type:
-        query = query.eq("item_type", item_type)
-    
+    query = supabase.table("user_items")
+
     if not include_meta and not include_content:
         query = query.select("item_id, item_type, updated_at")
         
@@ -240,6 +237,11 @@ def get_items(user_id: str, product_name: str, item_type: str = None, include_me
     
     else:
         query = query.select("*")
+
+    if item_type:
+        query = query.eq("item_type", item_type)
+    
+    query = query.eq("user_id", user_id).eq("product_name", product_name)
     
     items = query.execute()
     

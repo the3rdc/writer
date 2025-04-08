@@ -2,6 +2,9 @@ from fastapi import FastAPI, Depends, FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -106,18 +109,20 @@ def get_item_endpoint(
     item = get_item(user.user.id, item_id, include_meta, include_content)
     return item
 
+class ItemCreateRequest(BaseModel):
+    item_type: Optional[str] = None
+    meta: Optional[dict] = None
+    content: Optional[str] = None
+
 @app.post("/items")
 def create_item_endpoint(
-    item: dict, 
-    product_name: str = PRODUCT, 
-    item_type: str = None,
-    meta: dict = None,
-    content: str = None,
+    body: ItemCreateRequest,
+    product_name: str = PRODUCT,
     user = Depends(require_auth)):
     """
     Endpoint to create an item for a user.
     """
-    item = create_item(user.user.id, product_name, item_type, meta, content)
+    item = create_item(user.user.id, product_name, body.item_type, body.meta, body.content)
     return item
 
 @app.post("/items/{item_id}/content")
