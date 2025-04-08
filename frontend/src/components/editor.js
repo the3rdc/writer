@@ -26,7 +26,9 @@ export default function Editor({ initialValue = '', initialTitle = '',
 
     // Set new debounce timer
     debounceTimerRef.current = setTimeout(() => {
-      onContentChange?.(newText);
+      if(suggestion === ""){
+        onContentChange?.(newText);
+      }
     }, 500); // debounce delay
   };
 
@@ -47,6 +49,7 @@ export default function Editor({ initialValue = '', initialTitle = '',
     if (!editable) return;
   
     const handleKeyDown = (event) => {
+      console.log('Key pressed:', event.key);
       if (event.key === "Tab" && suggestion !== "") {
         event.preventDefault();
         const trimmed = getTrimmedSuggestion(suggestion);
@@ -61,6 +64,11 @@ export default function Editor({ initialValue = '', initialTitle = '',
         range.collapse(false);
   
         setSuggestion((prev) => prev.replace(trimmed, ""));
+      }else if (suggestion !== "" && event.key === suggestion[0]) {
+        //remove the first character from the suggestion
+        setSuggestion((prev) => prev.substring(1));
+      }else{
+        setSuggestion("");
       }
     };
   
@@ -68,7 +76,7 @@ export default function Editor({ initialValue = '', initialTitle = '',
   
     return () => editable.removeEventListener("keydown", handleKeyDown);
   }, [suggestion]);
-  
+
   return (
     <div className="flex justify-center">
       <div className="font-[family-name:var(--font-geist-mono)] antialiased prose w-full max-w-prose">
