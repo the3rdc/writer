@@ -125,16 +125,18 @@ def create_item_endpoint(
     item = create_item(user.user.id, product_name, body.item_type, body.meta, body.content)
     return item
 
+class ItemUpdateRequest(BaseModel):
+    content: Optional[str] = None
+
 @app.post("/items/{item_id}/content")
 def set_item_content_endpoint(
     item_id: str, 
-    content: str, 
-    product_name: str = PRODUCT, 
+    body: ItemUpdateRequest,
     user = Depends(require_auth)):
     """
     Endpoint to set the content of an item for a user.
     """
-    set_item_content(user.user.id, product_name, item_id, content)
+    set_item_content(user.user.id, item_id, body.content)
     return {"status": "ok"}
 
 @app.post("/items/{item_id}/meta")

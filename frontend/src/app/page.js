@@ -91,6 +91,11 @@ export default function Home() {
     }
   }
 
+  const onContentChange = async (newContent) => {
+    console.log('Content changed:', newContent)
+    setItemContent(activeDocId, newContent, session.access_token, router)
+  }
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -164,6 +169,7 @@ export default function Home() {
               initialTitle={activeTitle}
               initialValue={content}
               onTitleChange={onTitleChange}
+              onContentChange={onContentChange}
             />
           ) : (
             <div className="text-center text-gray-500 mt-24">
