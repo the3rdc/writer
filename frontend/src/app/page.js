@@ -15,12 +15,18 @@ export default function Home() {
   const [accepted, setAccepted] = useState(false);
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [content, setContent] = useState("Start writing...")
-  const [activeTitle , setActiveTitle] = useState("")
+
   const [isOpen, setIsOpen] = useState(true)
 
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+
+  const [activeDocId, setActiveDocId] = useState(null);
+  const [activeTitle, setActiveTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  const [loadingEditor, setLoadingEditor] = useState(false);
+
   
   const fetchDocs = async () => {
     try {
@@ -36,34 +42,42 @@ export default function Home() {
     }
   };
 
+  const openDoc = async (docId) => {
+    try {
+      setLoadingEditor(true);
+      const doc = await getItem(docId, session.access_token, router, true, true);
+      setActiveDocId(doc.item_id);
+      setActiveTitle(doc.item_meta.title);
+      setContent(doc.item_content);
+    } catch (err) {
+      toast.error('Failed to open document');
+      console.error('Failed to open doc:', err);
+    } finally {
+      setLoadingEditor(false);
+    }
+  }
+  
   const createDoc = async () => {
     try {
+      setLoadingEditor(true);
       const newDoc = {
         title: "Blank Page",
         content: "Start writing anything...",
       };
-      const createdDoc = await createItem(session.access_token, router,
+      const createdDocs = await createItem(session.access_token, router,
         "document",
         { title: newDoc.title },
         newDoc.content
       );
-      fetchDocs();
+      console.log('Created document:', createdDocs);
+      await fetchDocs();
+      await openDoc(createdDocs[0].item_id); // open it after creating
     } catch (err) {
       toast.error('Failed to create document');
       console.error('Failed to create doc:', err);
+      setLoadingEditor(false); // in case openDoc never gets called
     }
-  }
-
-  const openDoc = async (docId) => {
-    try {
-      const doc = await getItem(docId, session.access_token, router, true, true);
-      setContent(doc.item_content);
-      setActiveTitle(doc.item_meta.title);
-    } catch (err) {
-      toast.error('Failed to open document');
-      console.error('Failed to open doc:', err);
-    }
-  }
+  }  
 
   useEffect(() => {
     if (!loading && !user) {
@@ -128,12 +142,23 @@ export default function Home() {
         </header>
 
         <main className="flex-1 overflow-auto p-4">
-          <Editor
-            title={activeTitle}
-            initialValue={content}
-            onChange={(val) => console.log('Changed:', val)}
-          />
+          {loadingEditor ? (
+            <div className="text-center text-gray-500 mt-24 animate-pulse">
+              Loading editor...
+            </div>
+          ) : activeDocId ? (
+            <Editor
+              key={activeDocId}
+              initialTitle={activeTitle}
+              initialValue={content}
+            />
+          ) : (
+            <div className="text-center text-gray-500 mt-24">
+              Select or create a document to begin
+            </div>
+          )}
         </main>
+
       </div>
     </div>
   )
