@@ -1,21 +1,21 @@
 import { useEffect, useRef } from "react";
 
 export default function TinyBlock({
-    initialText = '', onTextChange, 
+    initialText = '', onTextChange, registerRef,
     suggestion, setSuggestion,
-    registerRef, onNewBlockRequest
+    onNewBlockRequest, onMergeBlockRequest,
+    onNextBlockRequest, onPrevBlockRequest,
 }) {
     const pRef = useRef(null);
     const debounceTimerRef = useRef(null);
 
     useEffect(() => {
-        console.log("HELLO")
         if (pRef.current) {
             pRef.current.innerText = initialText;
         }
         console.log(pRef.current)
         registerRef?.(pRef.current);
-    }, [initialText]);
+    }, []);
 
     const getCaretPosition = () => {
         const selection = window.getSelection();
@@ -34,6 +34,7 @@ export default function TinyBlock({
         if (!editable) return;
         const handleKeyDown = (e) => {
             console.log('Key pressed:', e.key);
+            //create a new block on enter
             if (e.key === 'Enter') {
                 e.preventDefault(); // Prevent default enter behavior
                 //get text in editabla after current caret position
@@ -48,7 +49,37 @@ export default function TinyBlock({
                 }
                 onNewBlockRequest?.(textAfterCursor);
             }
+
+            //support nevigation with arrows to next block
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                //check if the caret is at the end of the text
+                const selection = window.getSelection();
+                if (selection && selection.anchorOffset === editable.innerText.length) {
+                    e.preventDefault(); // Prevent default arrow behavior
+                    onNextBlockRequest?.();
+                }
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                //check if caret is at the beginning of the text
+                const selection = window.getSelection();
+                if (selection && selection.anchorOffset === 0) {
+                    e.preventDefault(); // Prevent default arrow behavior
+                    onPrevBlockRequest?.();
+                }
+            }
+
+            //merge blocks on backspace (at top) or delete (at bottom)
+            if ((e.key === 'Backspace' && getCaretPosition() === 0)) {
+                e.preventDefault(); // Prevent default delete behavior
+                onMergeBlockRequest?.("prev");
+                console.log("Merge Prev Block")
+            }
+            if ((e.key === 'Delete' && getCaretPosition() === 0)) {
+                e.preventDefault(); // Prevent default delete behavior
+                onMergeBlockRequest?.("next");
+                console.log("Merge Next Block")
+            }
                 
+            //accept suggestion on tab
             if (e.key === 'Tab' && suggestion !== "") {
                 e.preventDefault(); // Prevent default tab behavior
                 const trimmedSuggestion = getTrimmedSuggestion(suggestion);
@@ -68,7 +99,6 @@ export default function TinyBlock({
         let newText = e.currentTarget.innerText;
 
         // Remove unwanted trailing newlines (only if they weren't just typed)
-        /*
         if (newText.endsWith('\n') || newText.endsWith('\n\n')) {
             const selection = window.getSelection();
             if (selection && selection.anchorOffset === newText.length) {
@@ -79,7 +109,6 @@ export default function TinyBlock({
                 e.currentTarget.innerText = newText;
             }
         }
-            */
 
         // Debounce suggestion logic, unchanged
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);

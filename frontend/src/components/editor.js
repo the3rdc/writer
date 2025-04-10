@@ -34,6 +34,43 @@ function add_block(blocks, after_block_id, text){
   return updatedBlocks;
 }
 
+function merge_blocks(blocks, block_id, direction){
+  console.log("merging blocks", block_id, direction);
+  //merge the block with the given id with the block in the given direction
+  //direction can be 'prev' or 'next'
+  //if a block is found in the indicated dirction, prepend or append the content and remove the original block
+  const index = blocks.findIndex(block => block.id === block_id);
+  if (index === -1) {
+    console.error('Block not found:', block_id);
+    return blocks;
+  }
+  const block = blocks[index];
+  let updatedBlocks = [...blocks];
+  if (direction === 'prev' && index > 0) {
+    //merge with the previous block
+    const prevBlock = blocks[index - 1];
+
+    console.log("prev block ref content", prevBlock.ref.innerText);
+    console.log("current block ref content", block.ref.innerText);
+
+    const merged_content = prevBlock.ref.innerText + block.ref.innerText;
+    prevBlock.ref.innerText = merged_content;
+
+    updatedBlocks.splice(index, 1); //remove the current block
+  } else if (direction === 'next' && index < blocks.length - 1) {
+    //merge with the next block
+    const nextBlock = blocks[index + 1];
+    nextBlock.ref.innerText = content + nextBlock.ref.innerText
+    nextBlock.text = nextBlock.ref.innerText
+    updatedBlocks.splice(index, 1); //remove the current block
+  } else {
+    console.error('Invalid direction or no block to merge with:', direction);
+    return blocks;
+  }
+  console.log("returning updated blocks", updatedBlocks);
+  return updatedBlocks;
+}
+
 function set_ref(blocks, block_id, ref){
   //set the ref of the block with the given id to the given ref
   const updatedBlocks = blocks.map(block => {
@@ -126,6 +163,41 @@ export default function Editor({ initialValue = '', initialTitle = '',
     });
   }
 
+  const handlePrevBlockRequest = (block_id) => {
+    const index = blocks.findIndex(block => block.id === block_id);
+    if (index > 0) {
+      const prevBlock = blocks[index - 1];
+      if (prevBlock.ref) {
+        prevBlock.ref.focus();
+        // Create a range and set it to the end of the content
+        const range = document.createRange();
+        range.selectNodeContents(prevBlock.ref);
+        range.collapse(false); // Collapse the range to the end
+
+        // Apply the range to the current selection
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+  }
+
+  const handleNextBlockRequest = (block_id) => {
+    const index = blocks.findIndex(block => block.id === block_id);
+    if (index < blocks.length - 1) {
+      const nextBlock = blocks[index + 1];
+      if (nextBlock.ref) {
+        nextBlock.ref.focus();
+      }
+    }
+  }
+
+  const handleMergeBlockRequest = (block_id, direction) => {
+    console.log("got merge request", block_id, direction);
+    const newBlocks = merge_blocks(blocks, block_id, direction);
+    setBlocks(newBlocks);
+  }
+
   return (
     <div className="flex justify-center">
       <div className="font-[family-name:var(--font-geist-mono)] antialiased prose w-full max-w-prose">
@@ -141,9 +213,12 @@ export default function Editor({ initialValue = '', initialTitle = '',
             <TinyBlock
               key={block.id}
               initialText={block.text}
+              registerRef={(ref) => onRegiserRef(block.id, ref)}
               onTextChange={(newText) => {handleTinycontentChange(block.id, newText)}}
               onNewBlockRequest={(text) => handleNewBlockRequest(block.id, text)}
-              registerRef={(ref) => onRegiserRef(block.id, ref)}
+              onNextBlockRequest={() => handleNextBlockRequest(block.id)}
+              onPrevBlockRequest={() => handlePrevBlockRequest(block.id)}
+              onMergeBlockRequest={(direction) => handleMergeBlockRequest(block.id, direction)}
               suggestion={suggestion}
               setSuggestion={setSuggestion} 
             />
