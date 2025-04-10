@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import Editor from "@/components/editor";
@@ -29,6 +29,9 @@ export default function Home() {
   const [workingStatus, setWorkingStatus] = useState('idle');
 
   const [suggestion, setSuggestion] = useState("")
+  const latestRequestIdRef = useRef(0); // outside the function, like useState
+
+  const caretOffsetRef = useRef(null);
   
   const fetchDocs = async () => {
     try {
@@ -103,17 +106,35 @@ export default function Home() {
   }
 
   const onContentChange = async (newContent) => {
-    try{
+    const requestId = Date.now(); // or could increment a counter
+    latestRequestIdRef.current = requestId;
+  
+    try {
       setWorkingStatus("saving");
-      const response = await getSuggestions(activeDocId, newContent, session.access_token, router, true)
-      setSuggestion(response.prediction)
-      setWorkingStatus("success");
+  
+      const response = await getSuggestions(
+        activeDocId,
+        newContent,
+        session.access_token,
+        router,
+        true
+      );
+  
+      // Only use the result if this is the latest request
+      if (requestId === latestRequestIdRef.current) {
+        setSuggestion(response.prediction);
+        setWorkingStatus("success");
+      } else {
+        console.log("Stale suggestion response ignored");
+      }
     } catch (err) {
-      toast.error('Failed to update document content');
-      console.error('Failed to update content:', err);
-      setWorkingStatus("error");
+      if (requestId === latestRequestIdRef.current) {
+        toast.error("Failed to update document content");
+        console.error("Failed to update content:", err);
+        setWorkingStatus("error");
+      }
     }
-  }
+  };
 
   useEffect(() => {
     if (!loading && !user) {

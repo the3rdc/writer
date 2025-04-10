@@ -1,36 +1,111 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
+import TinyBlock from './tiny_block';
+
+function split_text(text){
+  //split text on newlines
+  //treat any number of consecutive newlines as a single newline
+  //and remove leading and trailing newlines
+  //reutrn an array of objects a block id and block text
+  const lines = text.split(/\n+/).filter(line => line.trim() !== '');
+  const blocks = lines.map((line, index) => {
+    return {
+      id: index,
+      text: line.trim(),
+      ref: null
+    };
+  });
+  return blocks;
+}
+
+function add_block(blocks, after_block_id, text){
+  const newBlock = {
+    id: blocks.length,
+    text: text || ''
+  };
+  //ids may not be in order, find the right one
+  const index = blocks.findIndex(block => block.id === after_block_id);
+  if (index === -1) {
+    console.error('Block not found:', after_block_id);
+    return blocks;
+  }
+  //insert the new block after the found block
+  const updatedBlocks = [...blocks.slice(0, index + 1), newBlock, ...blocks.slice(index + 1)];
+ 
+  return updatedBlocks;
+}
+
+function set_ref(blocks, block_id, ref){
+  //set the ref of the block with the given id to the given ref
+  const updatedBlocks = blocks.map(block => {
+    if (block.id === block_id) {
+      return {
+        ...block,
+        ref: ref
+      };
+    }
+    return block;
+  });
+  return updatedBlocks;
+}
 
 export default function Editor({ initialValue = '', initialTitle = '',
    onContentChange, onTitleChange, suggestion, setSuggestion
 }) {
-  const divRef = useRef(null);
   const titleRef = useRef(null);
   const debounceTimerRef = useRef(null);
+  const [blocks, setBlocks] = useState([]);
+
 
   useEffect(() => {
-    if (divRef.current) {
-      divRef.current.innerText = initialValue;
-    }
     if (titleRef.current) {
       titleRef.current.innerText = initialTitle;
     }
+    setBlocks(split_text(initialValue));
   }, [initialValue, initialTitle]);
 
   const handleContentChange = (e) => {
-    const newText = e.currentTarget.innerText;
-
-    // Clear previous timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new debounce timer
-    debounceTimerRef.current = setTimeout(() => {
-      if(suggestion === ""){
-        onContentChange?.(newText);
+    let newText = e.currentTarget.innerText;
+  
+    // Remove unwanted trailing newlines (only if they weren't just typed)
+    if (newText.endsWith('\n') || newText.endsWith('\n\n')) {
+      const selection = window.getSelection();
+      if (selection && selection.anchorOffset === newText.length) {
+        // User's caret is at the end — likely just pressed enter
+        // In that case, don't interfere
+      } else {
+        newText = newText.replace(/\n+$/, '');
+        e.currentTarget.innerText = newText;
       }
-    }, 500); // debounce delay
+    }
+  
+    // Debounce suggestion logic, unchanged
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      if (suggestion === "") onContentChange?.(newText);
+    }, 500);
   };
+
+  const handleTinycontentChange = (block_id, newText) => {
+    console.log('TinyBlock content change:', block_id, newText);
+  }
+  
+  const onRegiserRef = (block_id, ref) => {
+    console.log("registering ref", block_id, ref);
+    setBlocks((prevBlocks) => {
+      const newBlocks = set_ref(prevBlocks, block_id, ref);
+      return newBlocks;
+    });
+    //set cursor to beginnin of the ref
+    if (ref) {
+      console.log(ref);
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(ref);
+      range.collapse(true); // Collapse to the start of the range
+      selection.removeAllRanges(); // Clear any existing selections
+      selection.addRange(range); // Set the new selection
+    }
+  }
 
   const handleTitleBlur = (e) => {
     const newTitle = e.currentTarget.innerText;
@@ -44,38 +119,12 @@ export default function Editor({ initialValue = '', initialTitle = '',
     return match ? match[0] : full;
   };  
 
-  useEffect(() => {
-    const editable = divRef.current;
-    if (!editable) return;
-  
-    const handleKeyDown = (event) => {
-      console.log('Key pressed:', event.key);
-      if (event.key === "Tab" && suggestion !== "") {
-        event.preventDefault();
-        const trimmed = getTrimmedSuggestion(suggestion);
-  
-        // Insert the suggestion at the caret position
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return;
-  
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(document.createTextNode(trimmed));
-        range.collapse(false);
-  
-        setSuggestion((prev) => prev.replace(trimmed, ""));
-      }else if (suggestion !== "" && event.key === suggestion[0]) {
-        //remove the first character from the suggestion
-        setSuggestion((prev) => prev.substring(1));
-      }else{
-        setSuggestion("");
-      }
-    };
-  
-    editable.addEventListener("keydown", handleKeyDown);
-  
-    return () => editable.removeEventListener("keydown", handleKeyDown);
-  }, [suggestion]);
+  const handleNewBlockRequest = (after_block_id, newText) => {
+    setBlocks((prevBlocks) => {
+      const newBlocks = add_block(prevBlocks, after_block_id, newText);
+      return newBlocks;
+    });
+  }
 
   return (
     <div className="flex justify-center">
@@ -87,25 +136,19 @@ export default function Editor({ initialValue = '', initialTitle = '',
           suppressContentEditableWarning
           onBlur={handleTitleBlur}
         />
-        <div>
-          <span
-            ref={divRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleContentChange}
-            className="min-h-[200px] outline-none whitespace-pre-wrap break-words"
-          />
-          {
-            suggestion != "" && (
-              <span className="text-stone-600 dark:text-stone-400">
-                {getTrimmedSuggestion(suggestion)}
-                <span className="ml-2 text-xs text-stone-400 dark:text-stone-500">
-                &rsaquo; Tab to accept
-                </span>
-              </span>            
-            )
-          }
-        </div>
+        {
+          blocks.map((block, index) => (
+            <TinyBlock
+              key={block.id}
+              initialText={block.text}
+              onTextChange={(newText) => {handleTinycontentChange(block.id, newText)}}
+              onNewBlockRequest={(text) => handleNewBlockRequest(block.id, text)}
+              registerRef={(ref) => onRegiserRef(block.id, ref)}
+              suggestion={suggestion}
+              setSuggestion={setSuggestion} 
+            />
+          ))
+        }
       </div>
     </div>
   );

@@ -44,6 +44,7 @@ Notes:
   - In cases where your confidence is extremely high (repeated forms, common references, etc) you may suggest a few sentences.
 - The purpose here is to anticipate what the user will write next, not suggest a direction or enforce a style.
   - So put high importance on matching the users style and tone.
+- Pay attention to whitespace and make sure your suggestion uses leading whitespace only if needed.
 """
 
 def get_suggestions(prompt: str, max_tokens: int = 100) -> dict:
