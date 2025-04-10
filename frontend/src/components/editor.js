@@ -14,6 +14,13 @@ function split_text(text){
       ref: null
     };
   });
+  if (blocks.length === 0) {
+    blocks.push({
+      id: 0,
+      text: '',
+      ref: null
+    });
+  }
   return blocks;
 }
 

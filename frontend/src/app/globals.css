@@ -24,3 +24,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-mono);
 }
+
+.tiny-block span:empty {
+  display: block;
+}

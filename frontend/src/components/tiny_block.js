@@ -122,7 +122,7 @@ export default function TinyBlock({
             <span ref={pRef} 
                 contentEditable
                 suppressContentEditableWarning={true}
-                className="min-h-[200px] outline-none whitespace-pre-wrap break-words"
+                className="outline-none whitespace-pre-wrap break-words"
                 onInput={handleContentChange}>    
             </span>
             {
