@@ -28,3 +28,11 @@ body {
 .tiny-block span:empty {
   display: block;
 }
+
+.tiny-block .suggestion {
+  display: none;
+}
+
+.tiny-block:focus-within .suggestion {
+  display: inline;
+}

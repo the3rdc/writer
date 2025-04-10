@@ -109,6 +109,7 @@ export default function TinyBlock({
                 suggestion !== "" && !suggestion.startsWith(e.key)
                 && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight'
                 && e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
+                && e.key !== 'Enter'
             ) {
                 //if the key doesn't match the first character of the suggestion, clear it
                 setSuggestion("");
@@ -153,7 +154,7 @@ export default function TinyBlock({
             </span>
             {
                 suggestion != "" && (
-                <span className="text-stone-600 dark:text-stone-400">
+                <span className="text-stone-600 dark:text-stone-400 suggestion">
                     {getTrimmedSuggestion(suggestion)}
                     <span className="ml-2 text-xs text-stone-400 dark:text-stone-500">
                     &rsaquo; Tab to accept
