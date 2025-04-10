@@ -184,7 +184,16 @@ def get_suggestion(
     suggestion = get_suggestions(body.content)
     
     # Save the suggestions to the item if requested
+    # Todo - this should be in a background task
     if body.save_content:
         set_item_content(user.user.id, item_id, body.content)
+
+    #if the content doesn't end in a space, and the suggestion doesn't start with a space or punctuation, add a space
+    if not body.content.endswith(" ") and not suggestion['prediction'].startswith(" ") and not suggestion['prediction'][0] in [".", ",", "!", "?", "-", ":", ";", "(", ")", "[", "]", "{", "}", "'", '"', "`", "~", "@", "#", "$", "%", "^", "&", "*", "_", "+", "=", "|", "\\"]:
+        suggestion['prediction'] = " " + suggestion['prediction']
+
+    #if the content ends in a space and the suggestion starts with a space, remove it
+    if body.content.endswith(" ") and suggestion['prediction'].startswith(" "):
+        suggestion['prediction'] = suggestion['prediction'][1:]
     
     return suggestion
