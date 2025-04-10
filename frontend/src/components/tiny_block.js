@@ -70,12 +70,12 @@ export default function TinyBlock({
             //merge blocks on backspace (at top) or delete (at bottom)
             if ((e.key === 'Backspace' && getCaretPosition() === 0)) {
                 e.preventDefault(); // Prevent default delete behavior
-                onMergeBlockRequest?.("prev");
+                onMergeBlockRequest?.("prev", pRef.current.innerText);
                 console.log("Merge Prev Block")
             }
-            if ((e.key === 'Delete' && getCaretPosition() === 0)) {
+            if ((e.key === 'Delete' && getCaretPosition() === editable.innerText.length)) {
                 e.preventDefault(); // Prevent default delete behavior
-                onMergeBlockRequest?.("next");
+                onMergeBlockRequest?.("next", pRef.current.innerText);
                 console.log("Merge Next Block")
             }
                 

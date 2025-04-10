@@ -50,19 +50,44 @@ function merge_blocks(blocks, block_id, direction){
     //merge with the previous block
     const prevBlock = blocks[index - 1];
 
-    console.log("prev block ref content", prevBlock.ref.innerText);
-    console.log("current block ref content", block.ref.innerText);
+    const target_cursor_pos = prevBlock.ref.innerText.length;
 
     const merged_content = prevBlock.ref.innerText + block.ref.innerText;
     prevBlock.ref.innerText = merged_content;
+
+    prevBlock.ref.focus(); //focus on the previous block
+
+    const range = document.createRange();
+    const selection = window.getSelection();
+    range.setStart(prevBlock.ref.childNodes[0], target_cursor_pos);
+    range.collapse(true); // Collapse to the start of the range
+    selection.removeAllRanges(); // Clear any existing selections
+    selection.addRange(range); // Set the new selection
 
     updatedBlocks.splice(index, 1); //remove the current block
   } else if (direction === 'next' && index < blocks.length - 1) {
     //merge with the next block
     const nextBlock = blocks[index + 1];
-    nextBlock.ref.innerText = content + nextBlock.ref.innerText
-    nextBlock.text = nextBlock.ref.innerText
-    updatedBlocks.splice(index, 1); //remove the current block
+   
+    console.log("current block content", block.ref.innerText);
+    console.log("next block content", nextBlock.ref.innerText);
+
+    const target_cursor_pos = block.ref.innerText.length;
+
+    const merged_content = block.ref.innerText + nextBlock.ref.innerText;
+    block.ref.innerText = merged_content;
+
+    block.ref.focus(); //focus on the current block
+
+    const range = document.createRange();
+    const selection = window.getSelection();
+    range.setStart(block.ref.childNodes[0], target_cursor_pos);
+    range.collapse(true); // Collapse to the start of the range
+    selection.removeAllRanges(); // Clear any existing selections
+    selection.addRange(range); // Set the new selection
+
+    updatedBlocks.splice(index + 1, 1); //remove the next block
+
   } else {
     console.error('Invalid direction or no block to merge with:', direction);
     return blocks;
@@ -132,7 +157,7 @@ export default function Editor({ initialValue = '', initialTitle = '',
       const newBlocks = set_ref(prevBlocks, block_id, ref);
       return newBlocks;
     });
-    //set cursor to beginnin of the ref
+    //set cursor to beginning of the ref
     if (ref) {
       console.log(ref);
       const range = document.createRange();
