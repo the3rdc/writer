@@ -24,6 +24,11 @@ function split_text(text){
   return blocks;
 }
 
+function blocks_to_text(blocks){
+  const text = blocks.map(block => block.ref?.innerText).join('\n');
+  return text;
+}
+
 function add_block(blocks, after_block_id, text){
   const newBlock = {
     id: blocks.length,
@@ -118,7 +123,7 @@ function set_ref(blocks, block_id, ref){
 }
 
 export default function Editor({ initialValue = '', initialTitle = '',
-   onContentChange, onTitleChange, suggestion, setSuggestion
+   onRequestSave, onRequestSuggestions, onTitleChange, suggestion, setSuggestion
 }) {
   const titleRef = useRef(null);
   const debounceTimerRef = useRef(null);
@@ -155,7 +160,16 @@ export default function Editor({ initialValue = '', initialTitle = '',
   };
 
   const handleTinycontentChange = (block_id, newText) => {
-    console.log('TinyBlock content change:', block_id, newText);
+    const content = blocks_to_text(blocks);
+    
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      if (suggestion === ""){
+        onRequestSuggestions?.(content);
+      }else{
+        onRequestSave?.(content);
+      }
+    }, 500);
   }
   
   const onRegiserRef = (block_id, ref) => {
@@ -181,12 +195,6 @@ export default function Editor({ initialValue = '', initialTitle = '',
     console.log('Title blur:', newTitle);
     onTitleChange?.(newTitle);
   };
-
-  const getTrimmedSuggestion = (full) => {
-    if (!full) return '';
-    const match = full.match(/.*?[.?!,:;…]/);
-    return match ? match[0] : full;
-  };  
 
   const handleNewBlockRequest = (after_block_id, newText) => {
     setBlocks((prevBlocks) => {
@@ -251,7 +259,7 @@ export default function Editor({ initialValue = '', initialTitle = '',
               onNextBlockRequest={() => handleNextBlockRequest(block.id)}
               onPrevBlockRequest={() => handlePrevBlockRequest(block.id)}
               onMergeBlockRequest={(direction) => handleMergeBlockRequest(block.id, direction)}
-              suggestion={suggestion}
+              suggestion={(index === blocks.length - 1) ? suggestion : ""}
               setSuggestion={setSuggestion} 
             />
           ))

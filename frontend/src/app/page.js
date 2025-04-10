@@ -105,7 +105,7 @@ export default function Home() {
     }
   }
 
-  const onContentChange = async (newContent) => {
+  const onRequestSuggestions = async (newContent) => {
     const requestId = Date.now(); // or could increment a counter
     latestRequestIdRef.current = requestId;
   
@@ -133,6 +133,19 @@ export default function Home() {
         console.error("Failed to update content:", err);
         setWorkingStatus("error");
       }
+    }
+  };
+
+  const onRequestSave = async (newContent) => {
+    try {
+      setWorkingStatus("saving");
+      await setItemContent(activeDocId, newContent, session.access_token, router);
+      toast.success('Document saved');
+      setWorkingStatus("success");
+    } catch (err) {
+      toast.error('Failed to save document');
+      console.error('Failed to save content:', err);
+      setWorkingStatus("error");
     }
   };
 
@@ -213,7 +226,8 @@ export default function Home() {
               initialTitle={activeTitle}
               initialValue={content}
               onTitleChange={onTitleChange}
-              onContentChange={onContentChange}
+              onRequestSave={onRequestSave}
+              onRequestSuggestions={onRequestSuggestions}
               suggestion={suggestion}
               setSuggestion={setSuggestion}
             />

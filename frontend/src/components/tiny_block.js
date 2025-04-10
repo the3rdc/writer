@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
 
+const getTrimmedSuggestion = (full) => {
+    if (!full) return '';
+    const match = full.match(/.*?[.?!,:;…]/);
+    return match ? match[0] : full;
+};  
+
 export default function TinyBlock({
     initialText = '', onTextChange, registerRef,
     suggestion, setSuggestion,
@@ -83,9 +89,29 @@ export default function TinyBlock({
             if (e.key === 'Tab' && suggestion !== "") {
                 e.preventDefault(); // Prevent default tab behavior
                 const trimmedSuggestion = getTrimmedSuggestion(suggestion);
-                editable.innerText = trimmedSuggestion;
+                editable.innerText += trimmedSuggestion;
+                //remove accepted part from beginngin only of the suggestion
+                console.log(suggestion, trimmedSuggestion)
+                setSuggestion((prev) => prev.replace(trimmedSuggestion, ""));
+                onTextChange?.(editable.innerText);
+                //set cursor to end of the text
+                const range = document.createRange();
+                const selection = window.getSelection();
+                range.selectNodeContents(editable);
+                range.collapse(false);
+                range.collapse(true); // Collapse to the start of the range
+                selection.removeAllRanges(); // Clear any existing selections
+                selection.addRange(range); // Set the new selection
+            }else if (suggestion !== "" && e.key === suggestion[0]) {
+                //remove the first character from the suggestion
+                setSuggestion((prev) => prev.substring(1));
+            } else if (
+                suggestion !== "" && !suggestion.startsWith(e.key)
+                && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight'
+                && e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
+            ) {
+                //if the key doesn't match the first character of the suggestion, clear it
                 setSuggestion("");
-                onTextChange?.(trimmedSuggestion);
             }
         };
         editable.addEventListener("keydown", handleKeyDown);
