@@ -102,14 +102,17 @@ export default function TinyBlock({
                 range.collapse(true); // Collapse to the start of the range
                 selection.removeAllRanges(); // Clear any existing selections
                 selection.addRange(range); // Set the new selection
-            }else if (suggestion !== "" && e.key === suggestion[0]) {
+            }else if (suggestion !== "" && e.key.toLowerCase() === suggestion[0].toLowerCase()) {
                 //remove the first character from the suggestion
                 setSuggestion((prev) => prev.substring(1));
             } else if (
                 suggestion !== "" && !suggestion.startsWith(e.key)
                 && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight'
                 && e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
-                && e.key !== 'Enter'
+                && e.key !== 'Enter' && e.key !== 'Shift'
+                && e.key !== 'Control' && e.key !== 'Meta'
+                && e.key !== 'Alt' && e.key !== 'CapsLock'
+                && e.code !== 'Space' && e.key !== 'Tab'
             ) {
                 //if the key doesn't match the first character of the suggestion, clear it
                 setSuggestion("");

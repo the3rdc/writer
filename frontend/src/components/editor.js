@@ -201,6 +201,9 @@ export default function Editor({ initialValue = '', initialTitle = '',
       const newBlocks = add_block(prevBlocks, after_block_id, newText);
       return newBlocks;
     });
+    if(suggestion === ""){
+      handleTinycontentChange(blocks.length, "");
+    }
   }
 
   const handlePrevBlockRequest = (block_id) => {
