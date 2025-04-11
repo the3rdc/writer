@@ -63,4 +63,4 @@ def get_suggestions(prompt: str, max_tokens: int = 100) -> dict:
     )
     return json.loads(completion.choices[0].message.content)
 
-print(get_suggestions("It was a dark and"))
+#print(get_suggestions("It was a dark and"))

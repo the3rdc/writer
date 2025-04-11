@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, FastAPI
+from fastapi import FastAPI, Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,7 +15,8 @@ from omni.helpers import (
     create_checkout_session, verify_checkout_session,
     get_settings, set_settings,
     get_items, get_item, create_item, delete_item,
-    set_item_content, set_item_meta
+    set_item_content, set_item_meta,
+    check_user_subscription
 )
 
 from .suggest import get_suggestions
@@ -39,13 +40,15 @@ app.add_middleware(
 async def health_check():
     return {"status": "ok"}
 
+PRODUCT = "writer"
+
 @app.get("/purchase")
-def purchase(user_id: str, product_name: str):
+def purchase(user_id: str, product_name: str = PRODUCT):
     """
     Endpoint to purchase a product.
     """
-    session = create_checkout_session(user_id, product_name, f"{os.getenv("HOST")}complete-purchase", os.getenv("HOST"))
-    print(session)
+    session = create_checkout_session(user_id, product_name, f"{os.getenv("HOST")}/complete-purchase", os.getenv("HOST"))
+
     url = session.url
     # redirect to the checkout page
     return RedirectResponse(url, status_code=303)
@@ -59,8 +62,6 @@ def complete_purchase(user_id: str, session_id: str, product_name: str):
     session = verify_checkout_session(user_id, session_id, product_name)
     print(session)
     return RedirectResponse(os.getenv("HOST"), status_code=303)
-
-PRODUCT = "writer"
 
 @app.get("/subscription")
 def get_subscription_endpoint(sub = Depends(RequireProductSubscription(PRODUCT))):
@@ -172,7 +173,8 @@ class SuggestRequest(BaseModel):
 def get_suggestion(
     item_id: str, 
     body: SuggestRequest, 
-    user = Depends(require_auth)):
+    user = Depends(require_auth),
+    product_name: str = PRODUCT):
     """
     Endpoint to get suggestions for a user.
     """
@@ -180,6 +182,16 @@ def get_suggestion(
     if not item:
         return {"status": "error", "message": "Item not found"}
     
+    #count the number of words in the content
+    word_count = len(body.content.split())
+    if word_count > 100:
+        subscription = check_user_subscription(user.user.id, product_name)
+        if not subscription:
+            raise HTTPException(status_code=402, detail="Payment required")
+        
+        if subscription.status not in ["active", "trialing"]:
+                raise HTTPException(status_code=402, detail="Payment required")
+
     # Get the suggestions from the model
     suggestion = get_suggestions(body.content)
     

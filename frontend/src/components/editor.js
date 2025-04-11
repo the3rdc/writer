@@ -128,7 +128,8 @@ export default function Editor({ initialValue = '', initialTitle = '',
   const titleRef = useRef(null);
   const debounceTimerRef = useRef(null);
   const [blocks, setBlocks] = useState([]);
-
+  const [pasteModalOpen, setPasteModalOpen] = useState(false);
+  const [pastedText, setPastedText] = useState('');
 
   useEffect(() => {
     if (titleRef.current) {
@@ -244,13 +245,34 @@ export default function Editor({ initialValue = '', initialTitle = '',
   return (
     <div className="flex justify-center">
       <div className="font-[family-name:var(--font-geist-mono)] antialiased prose w-full max-w-prose">
-        <h1
-          ref={titleRef}
-          className="text-2xl font-bold mb-4"
-          contentEditable
-          suppressContentEditableWarning
-          onBlur={handleTitleBlur}
-        />
+        <div>
+          <h1
+            ref={titleRef}
+            className="text-2xl font-bold mb-4"
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={handleTitleBlur}
+          />
+          <div className="mb-4">
+                <button
+                  onClick={() => {
+                    const text = blocks_to_text(blocks);
+                    navigator.clipboard.writeText(text).then(() => {
+                      console.log('Copied!');
+                    });
+                  }}
+                  className="text-sm text-blue-500 hover:underline"
+                >
+                  📋 Copy
+                </button>
+                <button
+                  onClick={() => setPasteModalOpen(true)}
+                  className="text-sm text-blue-500 hover:underline"
+                >
+                  📥 Paste
+                </button>
+          </div>
+        </div>
         {
           blocks.map((block, index) => (
             <TinyBlock
@@ -268,6 +290,27 @@ export default function Editor({ initialValue = '', initialTitle = '',
           ))
         }
       </div>
+      {pasteModalOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow max-w-lg w-full">
+            <h2 className="text-lg font-semibold mb-2">Paste Text</h2>
+            <textarea
+              rows={10}
+              className="w-full border border-gray-300 p-2 mb-4"
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setPasteModalOpen(false)} className="text-sm text-gray-500">Cancel</button>
+              <button onClick={() => {
+                const newBlocks = split_text(pastedText);
+                setBlocks(newBlocks);
+                setPasteModalOpen(false);
+              }} className="text-sm text-blue-500 font-medium">Insert</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

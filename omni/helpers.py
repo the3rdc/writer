@@ -91,7 +91,7 @@ def check_for_product_record(user_id: str, product_name: str):
     """
     Check if the user has a record for the specified product.
     """
-    product = supabase.table("user_products").select("*").eq("user_id", user_id).eq("product_name", product_name).single().execute()
+    product = supabase.table("user_products").select("*").eq("user_id", user_id).eq("product_name", product_name).maybe_single().execute()
     print(product)
     if not product:
         return None
@@ -117,7 +117,8 @@ def check_user_subscription(user_id: str, product_name: str):
     if not product:
         return False
 
-    stripe_sub_id = product["data"]["stripe_subscription_id"]
+    print(product)
+    stripe_sub_id = product["stripe_sub_id"]
     if not stripe_sub_id:
         return False
 
@@ -190,25 +191,27 @@ def verify_checkout_session(user_id: str, session_id: str, product_name: str):
         print(checkout_session)
         product = check_for_product_record(user_id, product_name)
 
-        print(checkout_session)
-
         print(product)
        
         if not product:
             # Create a new record for the user
-            supabase.table("user_product").insert({
+            print("creating")
+            result = supabase.table("user_products").insert({
                 "user_id": user_id,
                 "product_name": product_name,
-                "stripe_subscription_id": checkout_session['subscription'],
+                "stripe_sub_id": checkout_session['subscription'],
             }).execute()
+            print(result)
         else:
             # Update the existing record
-            supabase.table("user_product").update({
-                "stripe_subscription_id": checkout_session['subscription']
+            result = supabase.table("user_products").update({
+                "stripe_sub_id": checkout_session['subscription']
             }).eq("user_id", user_id).eq("product_name", product_name).execute()
+            print(result)
 
         return True
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
     
 def get_settings(user_id: str, product_name: str, default=None):

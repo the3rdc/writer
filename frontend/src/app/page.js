@@ -36,7 +36,7 @@ export default function Home() {
   const fetchDocs = async () => {
     try {
       setLoadingDocs(true);
-      const items = await getItems(session.access_token, router, "document", true, false);
+      const items = await getItems(session, router, "document", true, false);
       setDocs(items);
     } catch (err) {
       toast.error('Failed to fetch documents');
@@ -50,7 +50,7 @@ export default function Home() {
   const openDoc = async (docId) => {
     try {
       setLoadingEditor(true);
-      const doc = await getItem(docId, session.access_token, router, true, true);
+      const doc = await getItem(docId, session, router, true, true);
       setActiveDocId(doc.item_id);
       setActiveTitle(doc.item_meta.title);
       setContent(doc.item_content);
@@ -70,7 +70,7 @@ export default function Home() {
         title: "Blank Page",
         content: "Start writing anything...",
       };
-      const createdDocs = await createItem(session.access_token, router,
+      const createdDocs = await createItem(session, router,
         "document",
         { title: newDoc.title },
         newDoc.content
@@ -90,7 +90,7 @@ export default function Home() {
   const onTitleChange = async (newTitle) => {
     try{
       setWorkingStatus("saving");
-      await setItemMeta(activeDocId, { title: newTitle }, session.access_token, router);
+      await setItemMeta(activeDocId, { title: newTitle }, session, router);
       setDocs(prev => prev.map(doc =>
         doc.item_id === activeDocId
           ? { ...doc, item_meta: { ...doc.item_meta, title: newTitle } }
@@ -115,7 +115,7 @@ export default function Home() {
       const response = await getSuggestions(
         activeDocId,
         newContent,
-        session.access_token,
+        session,
         router,
         true
       );
@@ -139,7 +139,7 @@ export default function Home() {
   const onRequestSave = async (newContent) => {
     try {
       setWorkingStatus("saving");
-      await setItemContent(activeDocId, newContent, session.access_token, router);
+      await setItemContent(activeDocId, newContent, session, router);
       toast.success('Document saved');
       setWorkingStatus("success");
     } catch (err) {
