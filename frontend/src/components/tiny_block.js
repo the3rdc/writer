@@ -102,7 +102,7 @@ export default function TinyBlock({
                 range.collapse(true); // Collapse to the start of the range
                 selection.removeAllRanges(); // Clear any existing selections
                 selection.addRange(range); // Set the new selection
-            }else if (suggestion !== "" && e.key.toLowerCase() === suggestion[0].toLowerCase()) {
+            }else if (suggestion !== "" && (e.key === suggestion[0] || e.key === suggestion[0].toLowerCase())) {
                 //remove the first character from the suggestion
                 setSuggestion((prev) => prev.substring(1));
             } else if (
@@ -144,7 +144,7 @@ export default function TinyBlock({
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = setTimeout(() => {
             if (suggestion === "") onTextChange?.(newText);
-        }, 500);
+        }, 1000);
     }
 
     return (

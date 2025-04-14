@@ -1,4 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
+import { ClipboardDocumentIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { toast } from 'react-hot-toast';
+
 import TinyBlock from './tiny_block';
 
 function split_text(text){
@@ -157,7 +160,7 @@ export default function Editor({ initialValue = '', initialTitle = '',
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
       if (suggestion === "") onContentChange?.(newText);
-    }, 500);
+    }, 1000);
   };
 
   const handleTinycontentChange = (block_id, newText) => {
@@ -170,7 +173,7 @@ export default function Editor({ initialValue = '', initialTitle = '',
       }else{
         onRequestSave?.(content);
       }
-    }, 500);
+    }, 1000);
   }
   
   const onRegiserRef = (block_id, ref) => {
@@ -259,17 +262,18 @@ export default function Editor({ initialValue = '', initialTitle = '',
                     const text = blocks_to_text(blocks);
                     navigator.clipboard.writeText(text).then(() => {
                       console.log('Copied!');
+                      toast.success('Copied to clipboard!');
                     });
                   }}
-                  className="text-sm text-blue-500 hover:underline"
+                  className="text-sm cursor-pointer text-gray-500 dark:text-gray-400"
                 >
-                  📋 Copy
+                  <ClipboardDocumentIcon className="h-6 w-6" />
                 </button>
                 <button
                   onClick={() => setPasteModalOpen(true)}
-                  className="text-sm text-blue-500 hover:underline"
+                  className="text-sm cursor-pointer ml-2"
                 >
-                  📥 Paste
+                  <ClipboardDocumentListIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
                 </button>
           </div>
         </div>
@@ -303,10 +307,15 @@ export default function Editor({ initialValue = '', initialTitle = '',
             <div className="flex justify-end gap-2">
               <button onClick={() => setPasteModalOpen(false)} className="text-sm text-gray-500">Cancel</button>
               <button onClick={() => {
-                const newBlocks = split_text(pastedText);
-                setBlocks(newBlocks);
-                setPasteModalOpen(false);
-              }} className="text-sm text-blue-500 font-medium">Insert</button>
+                setBlocks([]);
+                setTimeout(() => {
+                  setBlocks(split_text(pastedText));
+                  setPastedText('');
+                  setPasteModalOpen(false);
+                  setSuggestion('');
+                }
+                , 0);
+              }} className="text-sm text-blue-500 font-medium">Insert (Overwrite Existing)</button>
             </div>
           </div>
         </div>

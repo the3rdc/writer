@@ -125,6 +125,17 @@ def create_item_endpoint(
     """
     Endpoint to create an item for a user.
     """
+    #count existing items of the same type
+    items = get_items(user.user.id, product_name, body.item_type)
+    print(len(items))
+    if len(items) > 3:
+        subscription = check_user_subscription(user.user.id, product_name)
+        if not subscription:
+            raise HTTPException(status_code=402, detail="Payment required")
+        
+        if subscription.status not in ["active", "trialing"]:
+                raise HTTPException(status_code=402, detail="Payment required")
+
     item = create_item(user.user.id, product_name, body.item_type, body.meta, body.content)
     return item
 
@@ -184,7 +195,7 @@ def get_suggestion(
     
     #count the number of words in the content
     word_count = len(body.content.split())
-    if word_count > 100:
+    if word_count > 250:
         subscription = check_user_subscription(user.user.id, product_name)
         if not subscription:
             raise HTTPException(status_code=402, detail="Payment required")

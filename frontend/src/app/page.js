@@ -54,6 +54,7 @@ export default function Home() {
       setActiveDocId(doc.item_id);
       setActiveTitle(doc.item_meta.title);
       setContent(doc.item_content);
+      setSuggestion("")
     } catch (err) {
       toast.error('Failed to open document');
       console.error('Failed to open doc:', err);
@@ -96,7 +97,7 @@ export default function Home() {
           ? { ...doc, item_meta: { ...doc.item_meta, title: newTitle } }
           : doc
       ));
-      toast.success('Title updated');
+      //toast.success('Title updated');
       setWorkingStatus("success");
     } catch (err) {
       toast.error('Failed to update document title');
@@ -140,7 +141,7 @@ export default function Home() {
     try {
       setWorkingStatus("saving");
       await setItemContent(activeDocId, newContent, session, router);
-      toast.success('Document saved');
+      //toast.success('Document saved');
       setWorkingStatus("success");
     } catch (err) {
       toast.error('Failed to save document');
