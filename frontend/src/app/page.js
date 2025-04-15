@@ -5,8 +5,10 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import Editor from "@/components/editor";
-import { getItems, getItem, createItem, setItemMeta, setItemContent, getSuggestions } from "@/lib/api";
+import { getItems, getItem, createItem, setItemMeta, setItemContent, getSuggestions, getSubscription, directToPurchasePage } from "@/lib/api";
 import toast from "react-hot-toast";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/';
 
 export default function Home() {
   
@@ -32,6 +34,7 @@ export default function Home() {
   const latestRequestIdRef = useRef(0); // outside the function, like useState
 
   const caretOffsetRef = useRef(null);
+  const [subscription, setSubscription] = useState(false);
   
   const fetchDocs = async () => {
     try {
@@ -160,6 +163,18 @@ export default function Home() {
     fetchDocs();
   }, [session, router]);
   
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const sub = await getSubscription(session, router);
+        setSubscription(sub);
+      } catch (err) {
+        console.error('Failed to fetch subscription:', err);
+      }
+    };
+    fetchSubscription();
+  }
+  , [session, router]);
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
@@ -194,14 +209,19 @@ export default function Home() {
         <br />
         <hr className="border-gray-300 dark:border-gray-700" />
         <br />
-        <button
-            className="p-2 my-3 mx-4 text-xs cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-        >Account</button>
-        <div className={ isOpen ? 'hidden' : 'flex items-center justify-between p-4' }>
-          <button
-              className="p-2 my-3 mx-4 text-xs cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-          >Account</button>
-        </div>
+        {
+            (subscription && !subscription.cancel_at_period_end) ? (
+              <a
+                  href="https://billing.stripe.com/p/login/dR65mjaOg17X4XSfYY"
+                  className="p-2 my-3 mx-4 text-xs cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+              >My Subscription</a>
+            ) : (
+              <button
+                  onClick={() => directToPurchasePage(session, router)}
+                  className="p-2 my-3 mx-4 text-xs cursor-pointer rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+              >Upgrade</button>
+            )
+          }
       </Sidebar>
 
       {/* Main content area */}

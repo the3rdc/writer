@@ -133,7 +133,7 @@ def create_item_endpoint(
         if not subscription:
             raise HTTPException(status_code=402, detail="Payment required")
         
-        if subscription.status not in ["active", "trialing"]:
+        if subscription.status not in ["active", "trialing"] or subscription.cancel_at_period_end:
                 raise HTTPException(status_code=402, detail="Payment required")
 
     item = create_item(user.user.id, product_name, body.item_type, body.meta, body.content)
